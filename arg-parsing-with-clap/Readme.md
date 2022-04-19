@@ -2,4 +2,4 @@
 
 ---
 
-TODO : Add Blog link after publishing
+Blog Link : [https://blog.logrocket.com/command-line-argument-parsing-rust-using-clap/](https://blog.logrocket.com/command-line-argument-parsing-rust-using-clap/)
