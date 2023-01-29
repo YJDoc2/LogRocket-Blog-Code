@@ -1,0 +1,20 @@
+document = { SOI ~ ( tag ~ text?)* ~ EOI }
+
+tag = ${ start_tag | self_closing_tag | end_tag }
+
+start_tag = { "<" ~ tag_name ~ (WHITESPACE+ ~ attr)* ~ ">" }
+end_tag = { "</" ~ tag_name ~ (WHITESPACE+ ~ attr)* ~ ">" }
+self_closing_tag = { "<" ~ tag_name ~ (WHITESPACE+ ~ attr)* ~ "/>" }
+
+tag_name = { ASCII_ALPHA+ }
+
+text = { (ASCII_ALPHANUMERIC | other_symbols | non_tag_start | WHITESPACE )+ }
+
+non_tag_start = ${ "<" ~ WHITESPACE+}
+other_symbols = { "@" | ";" | "," | ">" }
+
+attr = { attr_name ~ "=" ~ "\"" ~ text ~ "\""}
+
+attr_name = { ASCII_ALPHA+ }
+
+WHITESPACE = _{ " " | NEWLINE }
