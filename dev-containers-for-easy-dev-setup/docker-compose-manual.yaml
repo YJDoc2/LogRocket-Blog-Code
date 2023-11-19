@@ -1,0 +1,40 @@
+version: "3.8"
+
+services:
+  frontend:
+    networks:
+      - app_demo
+    build:
+      dockerfile: "./frontend.Dockerfile"
+      context: "."
+    volumes:
+      - type: bind
+        source: ./frontend
+        target: /frontend
+    ports:
+      - 3000:3000
+  backend:
+    networks:
+      - app_demo
+    build:
+      dockerfile: "./backend.Dockerfile"
+      context: "."
+    ports:
+      - 5000
+  db:
+    image: mongo:7.0.2
+    volumes:
+      - type: volume
+        source: dbdata
+        target: /var/lib/mongodb
+    networks:
+      - app_demo
+    ports:
+      - 27017
+
+networks:
+  app_demo:
+
+
+volumes:
+  dbdata:

@@ -1,0 +1,6 @@
+{
+    "name": "Ruby-test",
+    "build": {
+        "dockerfile": "Dockerfile"
+    }
+}

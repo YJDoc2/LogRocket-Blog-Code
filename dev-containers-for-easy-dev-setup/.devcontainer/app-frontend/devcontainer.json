@@ -1,0 +1,8 @@
+{
+    "name": "app-frontend",
+    "dockerComposeFile":"./docker-compose.yaml",
+    "service": "frontend",
+    "workspaceFolder": "/frontend",
+    "mounts": ["type=bind,source=../../frontend,target=/frontend"],
+    "shutdownAction": "stopCompose"
+}
