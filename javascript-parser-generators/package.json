@@ -1,0 +1,16 @@
+{
+  "name": "javascript-parser-generators",
+  "version": "1.0.0",
+  "description": "",
+  "main": "ohm-example.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "chevrotain": "^11.0.3",
+    "ohm-js": "^17.1.0"
+  }
+}
