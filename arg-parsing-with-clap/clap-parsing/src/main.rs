@@ -5,26 +5,26 @@ use std::fs;
 use std::path::PathBuf;
 mod logger;
 
-fn validate_package_name(name: &str) -> Result<(), String> {
+fn validate_package_name(name: &str) -> Result<String, String> {
     if name.trim().len() != name.len() {
         Err(String::from(
             "package name cannot have leading and trailing space",
         ))
     } else {
-        Ok(())
+        Ok(name.to_string())
     }
 }
 
 #[derive(Parser, Debug)]
-#[clap(author = "Author Name", version, about)]
+#[command(author = "Author Name", version, about)]
 /// A Very simple Package Hunter
 struct Arguments {
-    #[clap(default_value_t=usize::MAX,short, long)]
+    #[arg(default_value_t = usize::MAX, short, long)]
     /// maximum depth to which sub-directories should be explored
     max_depth: usize,
-    #[clap(short, long, parse(from_occurrences))]
-    verbosity: usize,
-    #[clap(subcommand)]
+    #[arg(short, long, action = clap::ArgAction::Count)]
+    verbosity: u8,
+    #[command(subcommand)]
     cmd: SubCommand,
 }
 
@@ -32,16 +32,16 @@ struct Arguments {
 enum SubCommand {
     /// Count how many times the package is used
     Count {
-        #[clap(forbid_empty_values = true, validator = validate_package_name)]
+        #[arg(value_parser = validate_package_name)]
         /// Name of the package to search
         package_name: String,
     },
     /// list all the projects
     Projects {
-        #[clap(short, long, default_value_t = String::from("."),forbid_empty_values = true, validator = validate_package_name)]
+        #[arg(short, long, default_value_t = String::from("."), value_parser = validate_package_name)]
         /// directory to start exploring from
         start_path: String,
-        #[clap(short, long, multiple_values = true, value_delimiter = ':')]
+        #[arg(short, long, value_delimiter = ':')]
         /// paths to exclude when searching
         exclude: Vec<String>,
     },
@@ -146,7 +146,7 @@ fn projects(
 
 fn main() {
     let args = Arguments::parse();
-    let logger = logger::DummyLogger::new(args.verbosity);
+    let logger = logger::DummyLogger::new(args.verbosity as usize);
     match args.cmd {
         SubCommand::Count { package_name } => match count(&package_name, args.max_depth, &logger) {
             Ok(c) => println!("{} uses found", c),
