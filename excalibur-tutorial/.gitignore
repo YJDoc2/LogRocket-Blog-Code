@@ -1,0 +1,12 @@
+node_modules
+.DS_Store
+dist
+dist-ssr
+*.local
+test/images/actual.png
+test/images/diff-*.png
+/test-results/
+/playwright-report/
+/blob-report/
+/playwright/.cache/
+public/assets/*

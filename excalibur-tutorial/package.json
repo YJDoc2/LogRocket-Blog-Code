@@ -1,0 +1,35 @@
+{
+  "name": "excalibur-tutorial",
+  "version": "0.0.0",
+  "description": "",
+  "main": "src/main.ts",
+  "scripts": {
+    "dev": "vite",
+    "start": "vite",
+    "build": "tsc && vite build",
+    "serve": "vite preview",
+    "test": "npm run build && npx playwright test",
+    "test:integration-update": "npx playwright test --update-snapshots"
+  },
+  "repository": {},
+  "keywords": [
+    "excalibur",
+    "excaliburjs",
+    "vite",
+    "game-engine"
+  ],
+  "author": "",
+  "license": "",
+  "bugs": {},
+  "homepage": "",
+  "dependencies": {
+    "@excaliburjs/plugin-tiled": "0.30.2",
+    "excalibur": "0.30.3"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.49.1",
+    "@types/node": "^22.10.2",
+    "typescript": "5.7.3",
+    "vite": "6.1.0"
+  }
+}
