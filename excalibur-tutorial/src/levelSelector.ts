@@ -1,71 +1,24 @@
-import {
-  Actor,
-  Color,
-  Engine,
-  Font,
-  FontUnit,
-  Rectangle,
-  vec,
-  Vector,
-  Text,
-  GraphicsGroup,
-  Collider,
-  CollisionContact,
-  Side,
-} from "excalibur";
-import { Player } from "./player";
+import { Engine, Scene, vec } from "excalibur";
+import { LevelIcon } from "./levelIcon";
 
-export class LevelSelector extends Actor {
-  next: string;
-  label: string;
-  engine: Engine;
-  constructor(levelName: string, label: string, pos: Vector, engine: Engine) {
-    super({
-      name: "LevelSelector",
-      pos: pos,
-      width: 100,
-      height: 100,
-    });
-    this.next = levelName;
-    this.label = label;
-    this.engine = engine;
-  }
-  onInitialize(engine: Engine): void {
-    const square = new Rectangle({
-      width: 50,
-      height: 50,
-      color: Color.Magenta,
-    });
-    const title = new Text({
-      text: this.label,
-      font: new Font({
-        family: "impact",
-        size: 12,
-        unit: FontUnit.Px,
-      }),
-    });
-    let group = new GraphicsGroup({
-      members: [
-        {
-          graphic: square,
-          offset: vec(0, 0),
-        },
-        {
-          graphic: title,
-          offset: vec(0, 60),
-        },
-      ],
-    });
-    this.graphics.add(group);
-  }
-  onCollisionStart(
-    self: Collider,
-    other: Collider,
-    side: Side,
-    contact: CollisionContact
-  ): void {
-    if (other.owner instanceof Player) {
-      this.engine.goToScene(this.next);
-    }
+export class LevelSelector extends Scene {
+  override onInitialize(engine: Engine): void {
+    // Scene.onInitialize is where we recommend you perform the composition for your game
+    let l1 = new LevelIcon(
+      () => {
+        engine.goToScene('level1');
+      },
+      vec(150, 150),
+      "Level 1"
+    );
+    let l2 = new LevelIcon(
+      () => {
+        console.log("clicked level 2");
+      },
+      vec(250, 150),
+      "Level 2"
+    );
+    this.add(l1);
+    this.add(l2);
   }
 }

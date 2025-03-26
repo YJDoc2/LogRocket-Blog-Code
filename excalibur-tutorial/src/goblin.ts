@@ -1,46 +1,51 @@
 import {
   Actor,
   Engine,
-  Keys,
   SpriteSheet,
   vec,
   Vector,
   Animation,
   AnimationStrategy,
   range,
-  CollisionType,
-  BoundingBox,
   EventEmitter,
 } from "excalibur";
 import { Resources } from "./resources";
-import { PLAYER_WALK_DISTANCE } from "./constant";
-import { BoundingBoxAroundActor } from "./cameraStrategy";
+import {
+  GOBLIN_ATTACK_COOLDOWN,
+  GOBLIN_ATTACK_DISTANCE,
+  GOBLIN_DETECTION_DISTANCE,
+  GOBLIN_WALK_DISTANCE,
+  PLAYER_ATTACK_RANGE,
+} from "./constant";
+import { Player } from "./player";
 
-export class Player extends Actor {
+export class Goblin extends Actor {
   idleAnimationRight: Animation;
   idleAnimationLeft: Animation;
   walkingAnimationLeft: Animation;
   walkingAnimationRight: Animation;
-  attackAnimationLeft: Animation;
   attackAnimationRight: Animation;
+  attackAnimationLeft: Animation;
   facingRight: boolean;
   events: EventEmitter;
-  attacking: boolean = false;
-  health = 10;
+  health = 3;
+  attacking = false;
+  lastAttack = 0;
+
+  player: Player | null = null;
   constructor(startPos: Vector, events: EventEmitter) {
     super({
-      name: "Player",
+      name: "Goblin",
       pos: startPos,
       width: 100,
       height: 100,
-      z: 10,
-      collisionType: CollisionType.Active,
+      z: 7,
       scale: vec(1, 1),
     });
     this.events = events;
     this.facingRight = true;
     let spriteSheet = SpriteSheet.fromImageSource({
-      image: Resources.Knight,
+      image: Resources.Goblin,
       grid: {
         rows: 8,
         columns: 6,
@@ -50,7 +55,7 @@ export class Player extends Actor {
     });
     this.idleAnimationRight = Animation.fromSpriteSheet(
       spriteSheet,
-      range(0, 5),
+      range(0, 6),
       100,
       AnimationStrategy.Loop
     );
@@ -60,7 +65,7 @@ export class Player extends Actor {
 
     this.walkingAnimationRight = Animation.fromSpriteSheet(
       spriteSheet,
-      range(6, 11),
+      range(7, 12),
       100,
       AnimationStrategy.Loop
     );
@@ -69,36 +74,37 @@ export class Player extends Actor {
 
     this.attackAnimationRight = Animation.fromSpriteSheet(
       spriteSheet,
-      range(12, 17),
+      range(13, 18),
       100,
       AnimationStrategy.Freeze
     );
     this.attackAnimationRight.events.on("end", (a) => {
-      this.events.emit("attack", { pos: this.pos, right: this.facingRight });
       this.attacking = false;
     });
     this.attackAnimationLeft = this.attackAnimationRight.clone();
     this.attackAnimationLeft.flipHorizontal = true;
     this.attackAnimationLeft.events.on("end", (a) => {
-      this.events.emit("attack", { pos: this.pos, right: this.facingRight });
       this.attacking = false;
     });
   }
   onInitialize(engine: Engine): void {
-    let boundingBox = new BoundingBox(
-      0,
-      0,
-      engine.currentScene.tileMaps[0].width,
-      engine.currentScene.tileMaps[0].height
-    );
-    engine.currentScene.camera.addStrategy(
-      new BoundingBoxAroundActor(this, boundingBox)
-    );
     this.graphics.use(this.idleAnimationRight);
-    this.events.on("enemy-attack", () => {
-      this.health -= 1;
-      if (this.health <= 0) {
-        this.kill();
+    for (const a of engine.currentScene.actors) {
+      if (a instanceof Player) {
+        this.player = a;
+      }
+    }
+    this.events.on("attack", ({ pos, right }) => {
+      let diff = this.pos.sub(pos).magnitude;
+      if (diff > PLAYER_ATTACK_RANGE) {
+        return;
+      }
+
+      if ((pos.x < this.pos.x && right) || (pos.x > this.pos.x && !right)) {
+        this.health -= 1;
+        if (this.health <= 0) {
+          this.kill();
+        }
       }
     });
   }
@@ -106,28 +112,27 @@ export class Player extends Actor {
   update(engine: Engine, elapsed: number) {
     super.update(engine, elapsed);
 
-    let updateVector = null;
-    let idle = false;
+    let playerPos = this.player?.pos || vec(Infinity, Infinity);
+    let diff = this.pos.sub(playerPos);
+    let dist = diff.magnitude;
+    let now = Date.now();
 
-    let attacking = this.attacking;
-
-    if (engine.input.keyboard.isHeld(Keys.ArrowRight) && !attacking) {
-      this.facingRight = true;
-      updateVector = vec(PLAYER_WALK_DISTANCE, 0);
-    } else if (engine.input.keyboard.isHeld(Keys.ArrowLeft) && !attacking) {
-      this.facingRight = false;
-      updateVector = vec(-PLAYER_WALK_DISTANCE, 0);
-    } else if (engine.input.keyboard.isHeld(Keys.ArrowUp) && !attacking) {
-      updateVector = vec(0, -PLAYER_WALK_DISTANCE);
-    } else if (engine.input.keyboard.isHeld(Keys.ArrowDown) && !attacking) {
-      updateVector = vec(0, PLAYER_WALK_DISTANCE);
-    } else {
-      updateVector = vec(0, 0);
-      idle = true;
-    }
-    this.pos = this.pos.add(updateVector);
-    if (!attacking) {
-      if (engine.input.keyboard.wasPressed(Keys.Space)) {
+    if (dist < GOBLIN_DETECTION_DISTANCE && dist > GOBLIN_ATTACK_DISTANCE) {
+      let step = diff.normalize().negate().scale(GOBLIN_WALK_DISTANCE);
+      this.pos = this.pos.add(step);
+      if (step.x < 0) {
+        this.facingRight = false;
+        this.graphics.use(this.walkingAnimationLeft);
+      } else {
+        this.facingRight = true;
+        this.graphics.use(this.walkingAnimationRight);
+      }
+      this.attacking = false;
+    } else if (
+      dist < GOBLIN_ATTACK_DISTANCE &&
+      now - this.lastAttack > GOBLIN_ATTACK_COOLDOWN
+    ) {
+      if (!this.attacking) {
         this.attacking = true;
         this.attackAnimationLeft.reset();
         this.attackAnimationRight.reset();
@@ -136,18 +141,14 @@ export class Player extends Actor {
         } else {
           this.graphics.use(this.attackAnimationLeft);
         }
-      } else if (idle) {
-        if (this.facingRight) {
-          this.graphics.use(this.idleAnimationRight);
-        } else {
-          this.graphics.use(this.idleAnimationLeft);
-        }
+        this.events.emit("enemy-attack", {});
+        this.lastAttack = now;
+      }
+    } else if (!this.attacking) {
+      if (this.facingRight) {
+        this.graphics.use(this.idleAnimationRight);
       } else {
-        if (this.facingRight) {
-          this.graphics.use(this.walkingAnimationRight);
-        } else {
-          this.graphics.use(this.walkingAnimationLeft);
-        }
+        this.graphics.use(this.idleAnimationLeft);
       }
     }
   }

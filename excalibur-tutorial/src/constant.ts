@@ -1,0 +1,6 @@
+export const PLAYER_WALK_DISTANCE = 5;
+export const PLAYER_ATTACK_RANGE = 80;
+export const GOBLIN_WALK_DISTANCE = 3;
+export const GOBLIN_DETECTION_DISTANCE = 250;
+export const GOBLIN_ATTACK_DISTANCE = 75;
+export const GOBLIN_ATTACK_COOLDOWN = 1.5 * 1000;
